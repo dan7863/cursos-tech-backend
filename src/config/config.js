@@ -5,7 +5,7 @@ config();
 //GENERAL
 export const PORT = process.env.PORT || 3000;
 export const TOKEN_SECRET = process.env.TOKEN_SECRET || '';
-// export const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+export const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 //DB
 export const DB_USER = process.env.DB_USER || 'root';

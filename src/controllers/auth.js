@@ -1,6 +1,7 @@
 import AuthModel from "../models/auth.js";
 import sendEmail from "../utils/send_email.js";
 import VerifyTokenModel from "../models/verify_token.js";
+import { BASE_URL } from "../config/config.js";
 
 
 export default class AuthController{
@@ -22,13 +23,11 @@ export default class AuthController{
     */
     static verificationEmail = async (email, user_id) => {
         const subject = 'Account Verification Link';
-
-        console.log(user_id);
         const result = await VerifyTokenModel.createToken(user_id);
        
         if(!result.success) return result.success;
 
-        const text = 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/localhost:3009\/confirmation\/' + email + '\/' + result.token + '\n\nThank You!\n';
+        const text = 'Hello,\n\n' + 'Please verify your account by clicking the link: \n'+BASE_URL+'\/api\/confirmation\/' + email + '\/' + result.token + '\n\nThank You!\n';
         
         const email_sent = await sendEmail(
             email,

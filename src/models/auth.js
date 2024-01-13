@@ -1,15 +1,15 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import pool from "../database/connection.js";
-import { UserNames, TokenNames } from "../config/names.js";
 import { TOKEN_SECRET } from "../config/config.js";
+import UserModel from "./user.js";
+import VerifyTokenModel from "./verify_token.js";
 
 export default class AuthModel{
 
     static async signIn({user}){
         const {email, password} = user;
         try{
-            const [rows] = await pool.query("SELECT * FROM ?? where email=?", [UserNames.database_table_name, email]);
+            const [rows] = await UserModel.getUserByEmail(email);
             
             if(rows.length <= 0) return { success: false, status: 404, message: 'User not Found.' };
 
@@ -36,13 +36,13 @@ export default class AuthModel{
     static async signUp({form}){
         const {name, email, password, confirmPassword} = form;
         try{
-            const [emailValidation] = await pool.query("SELECT email FROM ?? where email=?", [UserNames.database_table_name, email]);
+            const [emailValidation] = await UserModel.getUserByEmail(email);
             
             if(emailValidation.length > 0) return { success: false, status: 409, message: 'Email already exists.' };
 
             const salt = await bcrypt.genSalt();
             const hashedPassword = await bcrypt.hash(password, salt);
-            const [rows] = await pool.query("INSERT INTO ?? (name, email, password, active) VALUES (?, ?, ?, ?)", [UserNames.database_table_name, name, email, hashedPassword, false]);
+            const [rows] = await UserModel.registerUser(name, email, hashedPassword);
             
             const newUser = {
                 id: rows.insertId,
@@ -54,8 +54,6 @@ export default class AuthModel{
             if(!err.statusCode){
                 err.statusCode = 500;
             }
-            console.log(err);
-            //Logging error
             return { success: false, status: err.statusCode, message: 'Something were wrong.' };
         }
     }
@@ -79,13 +77,12 @@ export default class AuthModel{
 
     static async confirmEmail({url}){
         const {email, tokenize} = url;
-        console.log(url);
         try{
-            const [token] = await pool.query("SELECT * FROM ?? where token=?", [TokenNames.database_table_name, tokenize]);
+            const [token] = await VerifyTokenModel.getToken(tokenize);
        
             if(token.length <= 0) return { success: false, status: 400, message: 'Your verification link may have expired. Please click on resend for verify your Email.' };
         
-            const [user] = await pool.query("SELECT * FROM ?? where id=? AND email=?", [UserNames.database_table_name, token[0].user_id, email]);
+            const [user] = await UserModel.getUserByEmail(email);
             
             if(user.length <= 0) {
                 return { success: false, status: 404, message: 'User not Found.' };
@@ -95,18 +92,18 @@ export default class AuthModel{
             }
             else{
                 user[0].active = true;
-                const [userResult] = await pool.query(`UPDATE ?? SET active = ? WHERE id = ?`, [UserNames.database_table_name, user[0].active, user[0].id]);
+                const [userResult] = await UserModel.activateUser(user[0].id);
 
                 if(userResult.affectedRows === 0) return { success: false, status: 404, message: 'User not Found.' };
 
-                const [tokenResult] = await pool.query(`DELETE FROM ?? WHERE token=?`, [TokenNames.database_table_name, tokenize]);
+                const [tokenResult] = await VerifyTokenModel.deleteToken(tokenize);
 
                 if(tokenResult.affectedRows === 0) return { success: false, status: 404, message: 'Token not Found.' };
 
                 return { success: true, status: 200, message: 'Your account has been successfully verified' };
             }
         }
-        catch(e){
+        catch(err){
             if(!err.statusCode){
                 err.statusCode = 500;
             }
@@ -116,7 +113,7 @@ export default class AuthModel{
     }
 
     static async resendLink({email}){
-        const [rows] = await pool.query("SELECT * FROM ?? where email=?", [UserNames.database_table_name, email]);
+        const [rows] = await UserModel.getUserByEmail(email);
 
         if(rows.length <= 0) {
             return { success: false, status: 404, message: 'User not Found.' };

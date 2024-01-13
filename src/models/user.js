@@ -29,6 +29,12 @@ const getUser = async (req, res) => {
     }
 };
 
+
+const getUserByEmail = async (email) => {
+    const rows = await pool.query("SELECT * FROM ?? where email=?", [UserNames.database_table_name, email]);
+    return rows;
+};
+
 const createUser = async (req, res) => {
     try{
         const {name, salary} = req.body;
@@ -47,12 +53,18 @@ const createUser = async (req, res) => {
     }
 };
 
+const registerUser = async (name, email, password) => {
+    const rows = await pool.query("INSERT INTO ?? (name, email, password, active) VALUES (?, ?, ?, ?)", [UserNames.database_table_name, name, email, password, false]);
+    return rows;
+}
+
 const updateUser = async (req, res) => {
     const {id} = req.params;
     const {name, salary} = req.body;
-    const [result] = await pool.query(`UPDATE ? SET name = ?, salary = ? WHERE id = ?`, [name, salary, id]);
-    
+  
     try{
+        const [result] = pool.query(`UPDATE ?? SET active = ? WHERE id = ?`, [UserNames.database_table_name, user[0].active, user[0].id]);
+    
         if(result.affectedRows === 0) return res.status(404).json({
             message: 'User not found'
         });
@@ -67,6 +79,11 @@ const updateUser = async (req, res) => {
     }
  
 };
+
+const activateUser = async (user_id) => {
+    const rows = await pool.query(`UPDATE ?? SET active = ? WHERE id = ?`, [UserNames.database_table_name, true, user_id]);
+    return rows;
+}
 
 const partialUpdateUser = async (req, res) => {
     const {id} = req.params;
@@ -109,7 +126,10 @@ const UserModel = {
     createUser,
     updateUser,
     partialUpdateUser,
-    deleteUser
+    deleteUser,
+    getUserByEmail,
+    registerUser,
+    activateUser
 };
 
 export default UserModel;
