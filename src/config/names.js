@@ -3,3 +3,8 @@ export const UserNames = {
     database_table_name: 'users',
     api_name: 'users'
 };
+
+export const TokenNames = {
+    database_table_name: 'verify_tokens',
+    api_name: 'token'
+};

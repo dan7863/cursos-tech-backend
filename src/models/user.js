@@ -71,9 +71,8 @@ const updateUser = async (req, res) => {
 const partialUpdateUser = async (req, res) => {
     const {id} = req.params;
     const {name, salary} = req.body;
-    const [result] = await pool.query(`UPDATE ? SET name = IFNULL(?, name), salary = IFNULL(?, salary) WHERE id = ?`, [name, salary, id]);
-    
     try{
+        const [result] = await pool.query(`UPDATE ? SET name = IFNULL(?, name), salary = IFNULL(?, salary) WHERE id = ?`, [name, salary, id]);
         if(result.affectedRows === 0) return res.status(404).json({
             message: 'User not found'
         });

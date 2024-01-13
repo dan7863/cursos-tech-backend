@@ -13,3 +13,12 @@ CREATE TABLE users (
     PRIMARY KEY(id),
     UNIQUE(email)
 );
+
+CREATE TABLE verify_tokens(
+    user_id INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expire_at DATE,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
