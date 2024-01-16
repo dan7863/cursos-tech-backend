@@ -60,10 +60,9 @@ const registerUser = async (name, email, password) => {
 
 const updateUser = async (req, res) => {
     const {id} = req.params;
-    const {name, salary} = req.body;
   
     try{
-        const [result] = pool.query(`UPDATE ?? SET active = ? WHERE id = ?`, [UserNames.database_table_name, user[0].active, user[0].id]);
+        const [result] = pool.query(`UPDATE ?? SET ? WHERE id = ?`, [UserNames.database_table_name, form, user[0].id]);
     
         if(result.affectedRows === 0) return res.status(404).json({
             message: 'User not found'
@@ -82,6 +81,11 @@ const updateUser = async (req, res) => {
 
 const activateUser = async (user_id) => {
     const rows = await pool.query(`UPDATE ?? SET active = ? WHERE id = ?`, [UserNames.database_table_name, true, user_id]);
+    return rows;
+}
+
+const updatePassword = async (password, user_id) => {
+    const rows = await pool.query(`UPDATE ?? SET password = ? WHERE id = ?`, [UserNames.database_table_name, password, user_id]);
     return rows;
 }
 
@@ -129,7 +133,8 @@ const UserModel = {
     deleteUser,
     getUserByEmail,
     registerUser,
-    activateUser
+    activateUser,
+    updatePassword
 };
 
 export default UserModel;

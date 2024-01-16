@@ -14,10 +14,11 @@ CREATE TABLE users (
     UNIQUE(email)
 );
 
-CREATE TABLE verify_tokens(
+CREATE TABLE tokens(
     user_id INT NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
     expire_at DATE,
+    type ENUM('verify', 'reset'),
     FOREIGN KEY (user_id) REFERENCES users (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE

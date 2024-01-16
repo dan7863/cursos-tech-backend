@@ -11,6 +11,12 @@ router.post('/signup', validateAuthFields('signup'), AuthController.signUp);
 
 router.get('/confirmation/:email/:token', resendLimiter, AuthController.confirmEmail);
 
+router.get('/reset/:email/:token', resendLimiter, AuthController.confirmPassword);
+
 router.post('/resend', AuthController.resendLink);
+
+router.post('/recover', AuthController.recoverPassword);
+
+router.post('/reset', resendLimiter, AuthController.resetPassword);
 
 export default router;

@@ -5,6 +5,6 @@ export const UserNames = {
 };
 
 export const TokenNames = {
-    database_table_name: 'verify_tokens',
+    database_table_name: 'tokens',
     api_name: 'token'
 };

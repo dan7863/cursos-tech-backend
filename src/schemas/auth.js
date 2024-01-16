@@ -27,6 +27,8 @@ const SignUpSchema = Schema.superRefine(({ confirmPassword, password }, ctx) => 
 
 const SignInSchema = Schema.omit({ name: true }).omit({confirmPassword: true});
 
+const ResetSchema = Schema.omit({ name: true });
+
 const parseSchema = (input, type) => {
     switch(type){
         case 'signin':

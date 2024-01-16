@@ -1,8 +1,7 @@
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { TOKEN_SECRET } from "../config/config.js";
 import UserModel from "./user.js";
 import VerifyTokenModel from "./verify_token.js";
+import JWTTokenModel from "./jwt_token.js";
 
 export default class AuthModel{
 
@@ -17,10 +16,8 @@ export default class AuthModel{
 
             if(!match) return { success: false, status: 401, message: 'Invalid Credentials.' };
 
-            const data = JSON.stringify({"id": rows[0].id, "exp": Date.now() + 60 * 1000});
+            const token = JWTTokenModel.signJWTToken({"id": rows[0].id}, 120);
             
-            const token = jwt.sign(data, TOKEN_SECRET);
-
             return { success: true, status: 200, token: token };
 
         } catch(error){
@@ -58,23 +55,6 @@ export default class AuthModel{
         }
     }
 
-    static async verifyToken({header}) {
-        if(!header) return res.status(401).json({ message:'Unauthorized'});
-    
-        const token = header.split(" ")[1];
-    
-        if(token.length == 0) return res.status(400).json({ message:'Empty Token'});
-        
-        const content = jwt.verify(token, TOKEN_SECRET);
-    
-        if(Date.now() > content.exp){
-            return res.status(401).json({ message:'Token Expired'});
-        }
-        req.data = content;
-
-        return req.data;
-    }
-
     static async confirmEmail({url}){
         const {email, tokenize} = url;
         try{
@@ -93,8 +73,6 @@ export default class AuthModel{
             else{
                 user[0].active = true;
                 const [userResult] = await UserModel.activateUser(user[0].id);
-
-                if(userResult.affectedRows === 0) return { success: false, status: 404, message: 'User not Found.' };
 
                 const [tokenResult] = await VerifyTokenModel.deleteToken(tokenize);
 
@@ -126,4 +104,72 @@ export default class AuthModel{
         }
     }
 
+    static async recoverPassword(email){
+        try{
+            const [rows] = await UserModel.getUserByEmail(email);
+            
+            if(rows.length <= 0) return { success: false, status: 404, message: 'User not Found.' };
+
+            const token = JWTTokenModel.signJWTToken({"id": rows[0].id, "email": rows[0].email}, 5);
+           
+
+            return { success: true, status: 200, token: token };
+
+        } catch(err){
+            if(!err.statusCode){
+                err.statusCode = 500;
+            }
+            console.log(err);
+            //Logging error
+            return { success: false, status: err.statusCode, message: 'Something were wrong.' };
+        }
+    }
+
+    static async confirmPassword({url}){
+        const {email, tokenize} = url;
+       
+        try{
+
+            const token = JWTTokenModel.verifyJWT(tokenize);
+
+            if(!token.success) return { success: token.false, status: token.status, message: token.message };
+       
+            const [user] = await UserModel.getUserByEmail(email);
+            
+            if(user.length <= 0) {
+                return { success: false, status: 404, message: 'User not Found.' };
+            }
+            else{
+                return { success: true, status: 202, message: {email: user[0].email, token: tokenize} };
+            }
+        }
+        catch(err){
+            if(!err.statusCode){
+                err.statusCode = 500;
+            }
+            //Logging error
+            return { success: false, status: err.statusCode, message: 'Something were wrong.' };
+        }
+    }
+
+    static async resetPassword({form}){
+        const {email, password} = form;
+
+        const [user] = await UserModel.getUserByEmail(email);
+            
+        if(user.length <= 0) {
+            return { success: false, status: 404, message: 'User not Found.' };
+        }
+        else{
+            const salt = await bcrypt.genSalt();
+            const hashedPassword = await bcrypt.hash(password, salt);
+            const [userResult] = await UserModel.updatePassword(hashedPassword, user[0].id);
+
+            if(userResult.affectedRows === 0) return { success: false, status: 404, message: 'Token not Found.' };
+
+            return { success: true, status: 200, message: 'Your password has been successfully restored. Please log in' };
+        }
+    }
+
+  
 }
