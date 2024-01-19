@@ -12,6 +12,8 @@ export default class AuthModel{
             
             if(rows.length <= 0) return { success: false, status: 404, message: 'User not Found.' };
 
+            if(!rows[0].active) return { success: false, status: 401, message: 'User not Verified. You can request an email verification' };
+
             const match = await bcrypt.compare(password, rows[0].password);
 
             if(!match) return { success: false, status: 401, message: 'Invalid Credentials.' };
@@ -20,7 +22,8 @@ export default class AuthModel{
             
             return { success: true, status: 200, token: token };
 
-        } catch(error){
+        } catch(err){
+            console.log(err);
             if(!err.statusCode){
                 err.statusCode = 500;
             }
@@ -37,10 +40,11 @@ export default class AuthModel{
             
             if(emailValidation.length > 0) return { success: false, status: 409, message: 'Email already exists.' };
 
+         
             const salt = await bcrypt.genSalt();
             const hashedPassword = await bcrypt.hash(password, salt);
             const [rows] = await UserModel.registerUser(name, email, hashedPassword);
-            
+    
             const newUser = {
                 id: rows.insertId,
                 email,
@@ -110,7 +114,7 @@ export default class AuthModel{
             
             if(rows.length <= 0) return { success: false, status: 404, message: 'User not Found.' };
 
-            const token = JWTTokenModel.signJWTToken({"id": rows[0].id, "email": rows[0].email}, 5);
+            const token = JWTTokenModel.signJWTToken({"id": rows[0].id, "email": rows[0].email}, 120);
            
 
             return { success: true, status: 200, token: token };
@@ -125,13 +129,13 @@ export default class AuthModel{
         }
     }
 
-    static async confirmPassword({url}){
+    static async validateRequestPassword({url}){
         const {email, tokenize} = url;
-       
+     
         try{
-
+          
             const token = JWTTokenModel.verifyJWT(tokenize);
-
+            console.log(token);
             if(!token.success) return { success: token.false, status: token.status, message: token.message };
        
             const [user] = await UserModel.getUserByEmail(email);
@@ -140,7 +144,7 @@ export default class AuthModel{
                 return { success: false, status: 404, message: 'User not Found.' };
             }
             else{
-                return { success: true, status: 202, message: {email: user[0].email, token: tokenize} };
+                return { success: true, status: 202, message: {email: 'Valid Token.'} };
             }
         }
         catch(err){

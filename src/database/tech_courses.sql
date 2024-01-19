@@ -5,7 +5,7 @@ CREATE DATABASE tech_courses;
 USE tech_courses;
 
 CREATE TABLE users (
-	id INT NOT NULL AUTO_INCREMENT,
+	id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -15,11 +15,44 @@ CREATE TABLE users (
 );
 
 CREATE TABLE tokens(
-    user_id INT NOT NULL,
+    user_id INT UNSIGNED,
     token VARCHAR(255) NOT NULL UNIQUE,
     expire_at DATE,
     type ENUM('verify', 'reset'),
     FOREIGN KEY (user_id) REFERENCES users (id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
+);
+
+CREATE TABLE c_categories(
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255),
+    PRIMARY KEY(id)
+);
+
+CREATE TABLE c_levels(
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255),
+    PRIMARY KEY(id)
+);
+
+CREATE TABLE c_courses(
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    title VARCHAR(100) NOT NULL UNIQUE,
+    category_id INT UNSIGNED,
+    level_id INT UNSIGNED,
+    price INT UNSIGNED,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id INT UNSIGNED,
+    FOREIGN KEY (category_id) REFERENCES c_categories (id) 
+    ON DELETE SET NULL
+    ON UPDATE SET NULL,
+    FOREIGN KEY (level_id) REFERENCES c_levels (id)
+    ON DELETE SET NULL
+    ON UPDATE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE SET NULL
+    ON UPDATE SET NULL,
+    PRIMARY KEY(id)
 );

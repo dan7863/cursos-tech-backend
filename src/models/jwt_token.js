@@ -6,9 +6,11 @@ export default class JWTTokenModel{
 
     //Time in minutes
     static signJWTToken(info, time = 0){
+       
         if(time){
             info.exp = Date.now() + (60*time) * 100;
         }
+
         const data = JSON.stringify(info);
         
         const token = jwt.sign(data, TOKEN_SECRET);
@@ -21,7 +23,7 @@ export default class JWTTokenModel{
     }
 
     static verifyBearerForJWT(authorization) {
-       
+        console.log(authorization);
         if(!authorization) return { success: false, status: 401, message: 'Anauthorized.' };
         const token = authorization.split(" ")[1];
     
@@ -32,9 +34,9 @@ export default class JWTTokenModel{
     }
 
     static verifyJWT(tokenize){
-  
+   
         const content = jwt.verify(tokenize, TOKEN_SECRET);
-    
+       
         if(content.length == 0) {
             return { success: false, status: 401, message: 'Empty Token.' }
         }
@@ -43,8 +45,8 @@ export default class JWTTokenModel{
             return { success: false, status: 401, message: 'Your verification link may have expired. Please click on resend for reset your Password.' };
         }
     
-    
-        return { success: true, status: 401, message: content };;
+        
+        return { success: true, status: 200, message: content };
     }
 }
 

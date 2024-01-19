@@ -15,7 +15,7 @@ export default class VerifyTokenModel{
             const tokenize = uuidv4();
        
             if(validation.length <= 0){
-                const [rows] = await pool.query(`INSERT INTO ?? (user_id, token, type) VALUES (?, ?, ?)`, [TokenNames.database_table_name, user_id, tokenize]);
+                const [rows] = await pool.query(`INSERT INTO ?? (user_id, token) VALUES (?, ?)`, [TokenNames.database_table_name, user_id, tokenize]);
             }
             else{
                 const [rows] = await pool.query(`UPDATE ?? SET token=? WHERE user_id=?`, [TokenNames.database_table_name, tokenize, user_id]);
@@ -23,6 +23,7 @@ export default class VerifyTokenModel{
 
             return { success: true, status: 200, token: tokenize};
         } catch(err){
+            console.log(err);
             if(!err.statusCode){
                 err.statusCode = 500;
             }

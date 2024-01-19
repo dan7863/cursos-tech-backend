@@ -3,6 +3,7 @@ import VerifyTokenModel from "../models/verify_token.js";
 import { BASE_URL } from "../config/config.js";
 import mailer from "../services/mailer.js";
 import JWTTokenModel from "../models/jwt_token.js";
+import UserModel from "../models/user.js";
 
 
 export default class AuthController{
@@ -20,7 +21,7 @@ export default class AuthController{
 
 
     static signUp = async (req, res) => {
-        const { name, email, password, confirmPassword } = req.body;
+        const { name, email, password, confirmPassword, url } = req.body;
         const form = {
             name,
             email,
@@ -29,15 +30,16 @@ export default class AuthController{
         }
 
         const result = await AuthModel.signUp({form});
-
+   
         if(result.success) {
             const token = await VerifyTokenModel.createToken(result.user.id);
             if(!token.success) return res.status(token.status).json({message: token.message});
-
+          
             const emailSent = await this.sendAuthEmail(
                 result.user.email,
                 'Account Verification Link', 
                 'Hello,\n\n' + 'Please verify your account by clicking the link: \n',
+                url,
                 'confirmation',
                 token.token);
             if(!emailSent){
@@ -45,10 +47,11 @@ export default class AuthController{
             }
         }
 
-        res.status(result.status).json(result.success ? 'You have successfully registered. Please check your email ('+result.user.email+') to verify your account.' : {message: result.message})
+        res.status(result.status).json(result.success ? 'You have successfully registered. Please check your email ('+result.user.email+') to verify your account.' + '</br></br>¿Didnt receive email verification? you can request' : {message: result.message})
     }
 
     static confirmEmail = async (req, res) => {
+       
         const url = {
             email: req.params.email,
             tokenize: req.params.token
@@ -61,17 +64,19 @@ export default class AuthController{
 
 
     static resendLink = async (req, res) => {
-        const {email} = req.body;
+        const {email, url} = req.body;
   
         const result = await AuthModel.resendLink({email});
         if(result.status == 202){
-            const token = await VerifyTokenModel.createToken(result.user.id);
+
+            const token = await VerifyTokenModel.createToken(result.message.id);
             if(!token.success) return res.status(token.status).json({message: token.message});
 
              const emailSent = await this.sendAuthEmail(
                  result.message.email,
                  'Account Verification Link', 
                  'Hello,\n\n' + 'Verification has been resent. Please verify your account by clicking the link: \n',
+                 url,
                  'confirmation',
                  token.token);
              if(emailSent){
@@ -80,21 +85,25 @@ export default class AuthController{
              }
         }
  
+        console.log(result.message);
         res.status(result.status).json({message: result.message});
      }
  
 
     static recoverPassword = async (req, res) => {
-        const { email } = req.body;
+        const { email, url } = req.body;
         const result = await AuthModel.recoverPassword(email);
+
        
         if(result.success) {
+            result.token = result.token.replace(/\./g, '%2E');
             const emailSent = await this.sendAuthEmail(
                 email,
                 'Reset Password',
                 'Hello,\n\n' + 'Password reset link has been sent. Please recover your password by clicking the link: \n',
+                url,
                 'reset',
-                result.token);
+                encodeURIComponent(result.token));
             if(!emailSent){
                 res.status(emailSent.status).json({message: emailSent.message});
             }
@@ -104,14 +113,14 @@ export default class AuthController{
     }
 
 
-    static confirmPassword = async (req, res) => {
+    static validateRequestPassword = async (req, res) => {
+     
         const url = {
             email: req.params.email,
             tokenize: req.params.token
         }
 
-
-        const result = await AuthModel.confirmPassword({url});
+        const result = await AuthModel.validateRequestPassword({url});
      
         res.status(result.status).json({message: result.message});
      }
@@ -121,9 +130,10 @@ export default class AuthController{
 
         if(!token_verification.success) return res.status(token_verification.status).json({message: token_verification.message});
 
-        const { email, password, confirmPassword } = req.body;
+
+        const { password, confirmPassword } = req.body;
         const form = {
-            email,
+            email: token_verification.message.email,
             password,
             confirmPassword
         }
@@ -137,9 +147,9 @@ export default class AuthController{
     /*
         Based on: https://stackoverflow.com/questions/39092822/how-to-confirm-email-address-using-express-node
     */
-    static sendAuthEmail = async (email, subject, text, url, token) =>{
+    static sendAuthEmail = async (email, subject, text, url, route, token) =>{
         
-        text += BASE_URL+'\/api\/'+ url + '\/' + email + '\/' + token + '\n\nThank You!\n';
+        text += url + '\/' + route + '\/' + email + '\/' + token + '\n\nThank You!\n';
 
         return mailer(email, subject, text);
     }
