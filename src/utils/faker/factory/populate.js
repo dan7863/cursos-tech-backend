@@ -10,9 +10,10 @@ export default class Populator{
             }).join(', ');
             
             const formattedKeys = keys.join(', ');
+
             const [query] = await pool.query(`INSERT INTO ${tableName} (${formattedKeys}) VALUES ${formattedData}`);
             
-            console.log(query);
+
         } catch(error){
             console.log(error);
             // return res.status(500).json({

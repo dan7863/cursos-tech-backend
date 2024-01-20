@@ -85,7 +85,6 @@ export default class AuthController{
              }
         }
  
-        console.log(result.message);
         res.status(result.status).json({message: result.message});
      }
  

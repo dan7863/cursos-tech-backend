@@ -39,6 +39,7 @@ CREATE TABLE c_levels(
 CREATE TABLE c_courses(
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     title VARCHAR(100) NOT NULL UNIQUE,
+    image_url VARCHAR(255) NOT NULL,
     category_id INT UNSIGNED,
     level_id INT UNSIGNED,
     price INT UNSIGNED,

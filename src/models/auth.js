@@ -135,7 +135,7 @@ export default class AuthModel{
         try{
           
             const token = JWTTokenModel.verifyJWT(tokenize);
-            console.log(token);
+
             if(!token.success) return { success: token.false, status: token.status, message: token.message };
        
             const [user] = await UserModel.getUserByEmail(email);
